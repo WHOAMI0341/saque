@@ -5,10 +5,10 @@ from collections import Counter
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
 from faker import Faker
+import asyncio
 
-# === Configuración ===
 TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")
-WEBHOOK_URL = os.getenv("https://saque-7.onrender.com")
+WEBHOOK_URL = os.getenv("https://saque-7.onrender.com/webhook")
 
 locales = {
     "usa": "en_US",
@@ -26,7 +26,6 @@ user_history = {}
 stats_data_generated = 0
 stats_countries_used = Counter()
 
-# === Funciones principales ===
 def get_fake_data(locale):
     fake = Faker(locale)
     return {
@@ -57,8 +56,6 @@ def build_main_menu():
     keyboard = [
         [InlineKeyboardButton("🌎 Cambiar país", callback_data="menu_change_country"),
          InlineKeyboardButton("🎲 Generar datos", callback_data="menu_generate_data")],
-        [InlineKeyboardButton("📜 Ver historial", callback_data="menu_show_history"),
-         InlineKeyboardButton("📊 Estadísticas", callback_data="menu_stats")],
         [InlineKeyboardButton("❓ Ayuda", callback_data="menu_help")]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -128,24 +125,11 @@ async def generate_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_history.setdefault(uid, []).append({"Tarjeta": card})
     await update.message.reply_text(f"💳 Tarjeta: {card}")
 
-async def show_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    hist = user_history.get(uid)
-    if not hist:
-        await update.message.reply_text("No hay historial aún.")
-        return
-    lines = []
-    for i, entry in enumerate(hist[-10:], 1):
-        lines.append(f"{i}. " + ", ".join(f"{k}: {v}" for k, v in entry.items()))
-    await update.message.reply_text("\n".join(lines))
-
-# === Callback (placeholder básico) ===
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.answer("Usa los comandos por ahora.")
+    await update.callback_query.answer("Usa los comandos disponibles por ahora.")
 
 # === MAIN ===
 def main():
-    import asyncio
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -156,7 +140,6 @@ def main():
     app.add_handler(CommandHandler("nombre", generate_name))
     app.add_handler(CommandHandler("email", generate_email))
     app.add_handler(CommandHandler("tarjeta", generate_card))
-    app.add_handler(CommandHandler("historial", show_history))
     app.add_handler(CallbackQueryHandler(button_handler))
 
     asyncio.run(app.bot.set_webhook(url=WEBHOOK_URL))
