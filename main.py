@@ -5,7 +5,7 @@ from datetime import datetime
 import logging
 import os
 
-TOKEN = os.getenv("TOKEN")  # Se recomienda usar variables de entorno
+TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")  # Se recomienda usar variables de entorno
 
 locales = {
     "usa": "en_US",
