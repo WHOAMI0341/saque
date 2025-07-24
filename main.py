@@ -5,6 +5,8 @@ from collections import Counter
 from faker import Faker
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from flask import Flask
+import threading
 
 # Banner en consola
 def print_banner():
@@ -28,6 +30,7 @@ def print_banner():
 {RESET}"""
     print(banner)
 
+# Variables globales
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     raise ValueError("❌ No se encontró la variable BOT_TOKEN. Por favor configúrala en Render.")
@@ -49,7 +52,6 @@ stats_data_generated = 0
 stats_countries_used = Counter()
 
 # Funciones principales
-
 def get_fake_data(locale):
     fake = Faker(locale)
     data = {
@@ -101,17 +103,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
 
+    global stats_data_generated
+
     if query.data == "menu_generate_data":
         locale = user_locales.get(user_id, "es_MX")
         data = get_fake_data(locale)
-        global stats_data_generated
         stats_data_generated += 1
         stats_countries_used[locale] += 1
         user_history.setdefault(user_id, []).append(data)
         await query.edit_message_text(format_data_text(data), reply_markup=build_main_menu())
 
     elif query.data == "menu_change_country":
-        keyboard = [[InlineKeyboardButton(p, callback_data=f"country_{p.lower()}")] for p in locales.keys()]
+        keyboard = [[InlineKeyboardButton(p.capitalize(), callback_data=f"country_{p.lower()}")] for p in locales.keys()]
         await query.edit_message_text("🌍 Elige un país:", reply_markup=InlineKeyboardMarkup(keyboard))
 
     elif query.data.startswith("country_"):
@@ -147,16 +150,30 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await query.edit_message_text(help_text, reply_markup=build_main_menu(), parse_mode="Markdown")
 
-# Main
+# Flask app para mantener vivo el servicio y exponer puerto
+flask_app = Flask(__name__)
+
+@flask_app.route("/")
+def home():
+    return "Bot funcionando 🚀"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8080))
+    flask_app.run(host="0.0.0.0", port=port)
+
 def main():
     print_banner()
+
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("[INFO] Bot iniciado.")
+    # Levantar Flask en un hilo aparte para Render
+    threading.Thread(target=run_flask).start()
+
+    print("[INFO] Bot iniciado correctamente.")
     app.run_polling()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
