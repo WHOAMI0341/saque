@@ -11,7 +11,7 @@ from bot_fake_data import (
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
 
 # Obtener el token desde las variables de entorno
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")
 
 if __name__ == "__main__":
     print_banner()
