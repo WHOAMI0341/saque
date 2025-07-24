@@ -39,11 +39,12 @@ def print_banner():
 
 {RESET}"""
     print(banner)
-    
+
+import os
+
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     raise ValueError("❌ No se encontró la variable BOT_TOKEN. Por favor configúrala en Render.")
-
 
 
 locales = {
