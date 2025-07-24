@@ -40,7 +40,7 @@ def print_banner():
 {RESET}"""
     print(banner)
 
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")
 
 locales = {
     "usa": "en_US",
