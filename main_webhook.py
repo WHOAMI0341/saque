@@ -17,7 +17,7 @@ from telegram.ext import (
 from faker import Faker
 
 TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Debe ser configurado en Render
+WEBHOOK_URL = os.getenv("https://saque-7.onrender.com")  # Debe ser configurado en Render
 
 # Aquí insertarías todo el resto de tu código (funciones, handlers, etc.)
 
