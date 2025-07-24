@@ -9,7 +9,7 @@ BANNER = """🧪 𝗕𝗢𝗧 𝗙𝗔𝗞𝗘 𝗗𝗔𝗧𝗔 𝗚𝗘𝗡𝗘
 """
 
 # Token del bot
-TOKEN = "TU_TOKEN_AQUI"  # ← Sustituye con tu token real
+TOKEN = "8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY"  # ← Sustituye con tu token real
 
 # Diccionario de locales por país
 locales = {
