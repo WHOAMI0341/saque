@@ -40,7 +40,7 @@ def print_banner():
 {RESET}"""
     print(banner)
 
-TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")
 
 locales = {...}  # Recortado por espacio, reemplazar por tu diccionario completo
 # El resto del código debe pegarse aquí (puedes copiarlo tú para mantenerlo completo)
