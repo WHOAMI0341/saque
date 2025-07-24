@@ -14,8 +14,9 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 from faker import Faker
+import os
 
-# --- Banner y colores ---
+# --- Banner y colores para consola ---
 def print_banner():
     RED = "\033[91m"
     GREEN = "\033[92m"
@@ -32,14 +33,15 @@ def print_banner():
    ██║     ╚██████╔╝╚██████╔╝███████╗███████╗
    ╚═╝      ╚═════╝  ╚═════╝ ╚══════╝╚══════╝{YELLOW}
 
-     Generador de Datos Falsos - Bot de Telegram
+     Generador de Datos Falsos - Bot Telegram
            Creado por: @LooKsCrazy0
 {CYAN}===============================================
 
 {RESET}"""
     print(banner)
 
-TOKEN = "8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY"
+# TOKEN desde variable de entorno
+TOKEN = os.getenv("TOKEN")
 
 locales = {
     "usa": "en_US",
@@ -209,7 +211,7 @@ async def show_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     lines = []
     for i, entry in enumerate(history[-10:], start=1):
-        line = f"{i}. " + ", ".join(f"{k}: {v}" for k,v in entry.items())
+        line = f"{i}. " + ", ".join(f"{k}: {v}" for k, v in entry.items())
         lines.append(line)
     await update.message.reply_text("📜 *Tu historial de datos recientes:*\n" + "\n".join(lines) + "\n\n✨ Creado por: @LooKsCrazy0", parse_mode="Markdown")
 
@@ -256,8 +258,6 @@ async def show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stats_data_generated, stats_countries_used  # Declaración global al inicio
-
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
@@ -341,6 +341,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ País no válido.", reply_markup=build_main_menu())
 
     elif data == "gen_full":
+        global stats_data_generated, stats_countries_used
         if user_id not in user_locales:
             await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
             return
@@ -353,6 +354,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text, reply_markup=build_main_menu())
 
     elif data == "gen_name":
+        global stats_data_generated, stats_countries_used
         if user_id not in user_locales:
             await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
             return
@@ -364,6 +366,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(f"👤 Nombre falso:\n{name}\n\n✨ Creado por: @LooKsCrazy0", reply_markup=build_main_menu())
 
     elif data == "gen_email":
+        global stats_data_generated, stats_countries_used
         if user_id not in user_locales:
             await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
             return
@@ -375,6 +378,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(f"📧 Email falso:\n{email}\n\n✨ Creado por: @LooKsCrazy0", reply_markup=build_main_menu())
 
     elif data == "gen_card":
+        global stats_data_generated, stats_countries_used
         if user_id not in user_locales:
             await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
             return
@@ -388,27 +392,30 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "menu_main":
         await query.edit_message_text("Menú principal:", reply_markup=build_main_menu())
 
-def main():
+    else:
+        await query.answer("Acción no reconocida.", show_alert=True)
+
+async def main():
     print_banner()
-    app = ApplicationBuilder().token(TOKEN).build()
+    application = ApplicationBuilder().token(TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("paises", paises))
-    app.add_handler(CommandHandler("pais", set_country_locale))
-    app.add_handler(CommandHandler("fake", generate_fake))
-    app.add_handler(CommandHandler("nombre", generate_name))
-    app.add_handler(CommandHandler("email", generate_email))
-    app.add_handler(CommandHandler("tarjeta", generate_card))
-    app.add_handler(CommandHandler("historial", show_history))
-    app.add_handler(CommandHandler("exportar_txt", export_txt))
-    app.add_handler(CommandHandler("exportar_json", export_json))
-    app.add_handler(CommandHandler("estadisticas", show_stats))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("paises", paises))
+    application.add_handler(CommandHandler("pais", set_country_locale))
+    application.add_handler(CommandHandler("fake", generate_fake))
+    application.add_handler(CommandHandler("nombre", generate_name))
+    application.add_handler(CommandHandler("email", generate_email))
+    application.add_handler(CommandHandler("tarjeta", generate_card))
+    application.add_handler(CommandHandler("historial", show_history))
+    application.add_handler(CommandHandler("exportar_txt", export_txt))
+    application.add_handler(CommandHandler("exportar_json", export_json))
+    application.add_handler(CommandHandler("estadisticas", show_stats))
+    application.add_handler(CallbackQueryHandler(button_handler))
 
-    app.add_handler(CallbackQueryHandler(button_handler))
-
-    print("[INFO] Bot iniciado.")
-    app.run_polling()
+    print("Bot iniciado y listo para usar.")
+    await application.run_polling()
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
