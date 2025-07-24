@@ -41,7 +41,7 @@ def print_banner():
     print(banner)
 
 # TOKEN desde variable de entorno
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")
 
 locales = {
     "usa": "en_US",
