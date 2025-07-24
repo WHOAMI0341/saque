@@ -2,36 +2,24 @@ import os
 import json
 from io import BytesIO
 from collections import Counter
-from telegram import (
-    Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    InputFile,
-)
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    ContextTypes,
-    CallbackQueryHandler,
-)
 from faker import Faker
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# --- Banner y colores ---
+# Banner en consola
 def print_banner():
-    RED = "\033[91m"
-    GREEN = "\033[92m"
     CYAN = "\033[96m"
+    GREEN = "\033[92m"
     YELLOW = "\033[93m"
     RESET = "\033[0m"
-
     banner = f"""
 {CYAN}===============================================
-{GREEN}   ██████╗  ██████╗  ██████╗ ███████╗███████╗
-   ██╔══██╗██╔═══██╗██╔════╝ ██╔════╝██╔════╝
-   ██████╔╝██║   ██║██║  ███╗█████╗  █████╗  
-   ██╔═══╝ ██║   ██║██║   ██║██╔══╝  ██╔══╝  
-   ██║     ╚██████╔╝╚██████╔╝███████╗███████╗
-   ╚═╝      ╚═════╝  ╚═════╝ ╚══════╝╚══════╝{YELLOW}
+{GREEN}   ██████▄  █████▄  █████▄ █████▇█████▇
+   ██╔═██║██╔═══██║██╔═══╝ ██╔═══╝
+   ██████╗╝██║   ██║██║  ████▃  ████▃  
+   ██╔═══╝ ██║   ██║██║   ██║██╔═╝  ██╔═╝  
+   ██║     ╚█████╔╝╚█████╔╝█████▇█████▇
+   ╚╝      ╚╝╚╝╚╝  ╚╝╚╝  ╚╝ ╚╝╚╝  ╚╝╚╝  ╚╝{YELLOW}
 
      Generador de Datos Falsos - Bot de Telegram
            Creado por: @LooKsCrazy0
@@ -40,12 +28,9 @@ def print_banner():
 {RESET}"""
     print(banner)
 
-import os
-
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     raise ValueError("❌ No se encontró la variable BOT_TOKEN. Por favor configúrala en Render.")
-
 
 locales = {
     "usa": "en_US",
@@ -63,6 +48,8 @@ user_history = {}
 stats_data_generated = 0
 stats_countries_used = Counter()
 
+# Funciones principales
+
 def get_fake_data(locale):
     fake = Faker(locale)
     data = {
@@ -77,7 +64,7 @@ def get_fake_data(locale):
     }
     return data
 
-def format_data_text(data: dict) -> str:
+def format_data_text(data):
     return (
         f"👤 Nombre: {data['Nombre']}\n"
         f"📧 Email: {data['Email']}\n"
@@ -86,335 +73,90 @@ def format_data_text(data: dict) -> str:
         f"💳 Tarjeta: {data['Tarjeta']}\n"
         f"📅 Nacimiento: {data['Nacimiento']}\n"
         f"🌍 País: {data['País']}\n"
-        f"🆔 RFC (falso): {data['RFC']}\n\n"
-        f"✨ Creado por: @LooKsCrazy0"
+        f"🆔 RFC (falso): {data['RFC']}\n"
+        f"\n✨ Creado por: @LooKsCrazy0"
     )
 
 def build_main_menu():
     keyboard = [
-        [
-            InlineKeyboardButton("🌎 Cambiar país", callback_data="menu_change_country"),
-            InlineKeyboardButton("🎲 Generar datos", callback_data="menu_generate_data"),
-        ],
-        [
-            InlineKeyboardButton("📜 Ver historial", callback_data="menu_show_history"),
-            InlineKeyboardButton("📊 Estadísticas", callback_data="menu_stats"),
-        ],
-        [
-            InlineKeyboardButton("❓ Ayuda", callback_data="menu_help"),
-        ],
+        [InlineKeyboardButton("🌎 Cambiar país", callback_data="menu_change_country"),
+         InlineKeyboardButton("🎲 Generar datos", callback_data="menu_generate_data")],
+        [InlineKeyboardButton("📜 Ver historial", callback_data="menu_show_history"),
+         InlineKeyboardButton("📊 Estadísticas", callback_data="menu_stats")],
+        [InlineKeyboardButton("❓ Ayuda", callback_data="menu_help")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
+# Handlers async
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_first_name = update.effective_user.first_name
-    welcome_text = (
-        f"👋 Hola {user_first_name}, bienvenido al Generador de Datos Falsos.\n\n"
-        "Usa el menú de abajo para navegar entre opciones.\n\n"
-        "✨ Creado por: @LooKsCrazy0"
+    user = update.effective_user
+    user_locales[user.id] = "es_MX"
+    await update.message.reply_text(
+        f"👋 Hola {user.first_name}, bienvenido al Generador de Datos Falsos.\nUsa el menú para comenzar.",
+        reply_markup=build_main_menu()
     )
-    await update.message.reply_text(welcome_text, reply_markup=build_main_menu())
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    help_text = (
-        "🛠 *Comandos disponibles:*\n\n"
-        "/start - Iniciar el bot y mostrar menú\n"
-        "/paises - Mostrar lista de países disponibles\n"
-        "/pais <nombre> - Seleccionar país (ejemplo: /pais mexico)\n"
-        "/fake - Generar datos falsos según el país seleccionado\n"
-        "/nombre - Generar solo un nombre falso\n"
-        "/email - Generar solo un email falso\n"
-        "/tarjeta - Generar solo una tarjeta de crédito falsa\n"
-        "/historial - Ver tus últimos datos generados\n"
-        "/exportar_txt - Exportar tu historial en archivo TXT\n"
-        "/exportar_json - Exportar tu historial en archivo JSON\n"
-        "/help - Mostrar este mensaje de ayuda\n\n"
-        "✨ Creado por: @LooKsCrazy0"
-    )
-    await update.message.reply_text(help_text)
-
-async def paises(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "🌎 Países disponibles:\n"
-    msg += "\n".join([f"• {p.title()}" for p in locales])
-    msg += "\n\n✨ Creado por: @LooKsCrazy0"
-    await update.message.reply_text(msg)
-
-async def set_country_locale(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if len(context.args) == 0:
-        await update.message.reply_text("❗ Usa el comando así: /pais mexico\n\n✨ Creado por: @LooKsCrazy0")
-        return
-
-    country = context.args[0].lower()
-    if country in locales:
-        user_locales[update.effective_user.id] = locales[country]
-        await update.message.reply_text(f"✅ País seleccionado: {country.title()}\n\n✨ Creado por: @LooKsCrazy0")
-    else:
-        await update.message.reply_text("❌ País no válido. Usa /paises para ver la lista.\n\n✨ Creado por: @LooKsCrazy0")
-
-async def generate_fake(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stats_data_generated, stats_countries_used
-    user_id = update.effective_user.id
-    if user_id not in user_locales:
-        await update.message.reply_text("❗ Por favor selecciona un país primero usando /pais <nombre>\n\n✨ Creado por: @LooKsCrazy0")
-        return
-
-    locale = user_locales[user_id]
-    data = get_fake_data(locale)
-    text = format_data_text(data)
-
-    user_history.setdefault(user_id, []).append(data)
-    stats_data_generated += 1
-    stats_countries_used[locale] += 1
-
-    await update.message.reply_text(text)
-
-async def generate_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stats_data_generated, stats_countries_used
-    user_id = update.effective_user.id
-    if user_id not in user_locales:
-        await update.message.reply_text("❗ Por favor selecciona un país primero usando /pais <nombre>\n\n✨ Creado por: @LooKsCrazy0")
-        return
-    locale = user_locales[user_id]
-    name = Faker(locale).name()
-    user_history.setdefault(user_id, []).append({"Nombre": name})
-    stats_data_generated += 1
-    stats_countries_used[locale] += 1
-    await update.message.reply_text(f"👤 Nombre falso:\n{name}\n\n✨ Creado por: @LooKsCrazy0")
-
-async def generate_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stats_data_generated, stats_countries_used
-    user_id = update.effective_user.id
-    if user_id not in user_locales:
-        await update.message.reply_text("❗ Por favor selecciona un país primero usando /pais <nombre>\n\n✨ Creado por: @LooKsCrazy0")
-        return
-    locale = user_locales[user_id]
-    email = Faker(locale).email()
-    user_history.setdefault(user_id, []).append({"Email": email})
-    stats_data_generated += 1
-    stats_countries_used[locale] += 1
-    await update.message.reply_text(f"📧 Email falso:\n{email}\n\n✨ Creado por: @LooKsCrazy0")
-
-async def generate_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stats_data_generated, stats_countries_used
-    user_id = update.effective_user.id
-    if user_id not in user_locales:
-        await update.message.reply_text("❗ Por favor selecciona un país primero usando /pais <nombre>\n\n✨ Creado por: @LooKsCrazy0")
-        return
-    locale = user_locales[user_id]
-    card = Faker(locale).credit_card_number(card_type='visa')
-    user_history.setdefault(user_id, []).append({"Tarjeta": card})
-    stats_data_generated += 1
-    stats_countries_used[locale] += 1
-    await update.message.reply_text(f"💳 Tarjeta de crédito falsa:\n{card}\n\n✨ Creado por: @LooKsCrazy0")
-
-async def show_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    history = user_history.get(user_id)
-    if not history:
-        await update.message.reply_text("No tienes datos generados aún.\n\n✨ Creado por: @LooKsCrazy0")
-        return
-    lines = []
-    for i, entry in enumerate(history[-10:], start=1):
-        line = f"{i}. " + ", ".join(f"{k}: {v}" for k,v in entry.items())
-        lines.append(line)
-    await update.message.reply_text("📜 *Tu historial de datos recientes:*\n" + "\n".join(lines) + "\n\n✨ Creado por: @LooKsCrazy0", parse_mode="Markdown")
-
-async def export_txt(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    history = user_history.get(user_id)
-    if not history:
-        await update.message.reply_text("No tienes datos generados aún para exportar.\n\n✨ Creado por: @LooKsCrazy0")
-        return
-    txt_data = ""
-    for i, entry in enumerate(history, start=1):
-        txt_data += f"{i}.\n"
-        for k, v in entry.items():
-            txt_data += f"{k}: {v}\n"
-        txt_data += "\n"
-    bio = BytesIO()
-    bio.write(txt_data.encode("utf-8"))
-    bio.seek(0)
-    await update.message.reply_document(document=InputFile(bio, filename="historial.txt"), caption="Aquí tienes tu historial en TXT\n\n✨ Creado por: @LooKsCrazy0")
-
-async def export_json(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    history = user_history.get(user_id)
-    if not history:
-        await update.message.reply_text("No tienes datos generados aún para exportar.\n\n✨ Creado por: @LooKsCrazy0")
-        return
-    json_data = json.dumps(history, ensure_ascii=False, indent=2)
-    bio = BytesIO()
-    bio.write(json_data.encode("utf-8"))
-    bio.seek(0)
-    await update.message.reply_document(document=InputFile(bio, filename="historial.json"), caption="Aquí tienes tu historial en JSON\n\n✨ Creado por: @LooKsCrazy0")
-
-async def show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    total = stats_data_generated
-    most_used = stats_countries_used.most_common(3)
-    msg = f"📊 *Estadísticas del bot:*\n\nTotal datos generados: {total}\n\nPaíses más usados:\n"
-    if most_used:
-        for country, count in most_used:
-            readable_country = next((k.title() for k,v in locales.items() if v == country), country)
-            msg += f"• {readable_country}: {count}\n"
-    else:
-        msg += "Ningún dato generado aún."
-    msg += "\n\n✨ Creado por: @LooKsCrazy0"
-    await update.message.reply_text(msg, parse_mode="Markdown")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stats_data_generated, stats_countries_used
-
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
-    data = query.data
 
-    if data == "menu_change_country":
-        keyboard = []
-        keys = list(locales.keys())
-        for i in range(0, len(keys), 3):
-            row = [
-                InlineKeyboardButton(keys[j].title(), callback_data=f"set_country_{keys[j]}")
-                for j in range(i, min(i+3, len(keys)))
-            ]
-            keyboard.append(row)
-        keyboard.append([InlineKeyboardButton("⬅️ Volver", callback_data="menu_main")])
-        await query.edit_message_text("🌎 Selecciona un país:", reply_markup=InlineKeyboardMarkup(keyboard))
+    if query.data == "menu_generate_data":
+        locale = user_locales.get(user_id, "es_MX")
+        data = get_fake_data(locale)
+        global stats_data_generated
+        stats_data_generated += 1
+        stats_countries_used[locale] += 1
+        user_history.setdefault(user_id, []).append(data)
+        await query.edit_message_text(format_data_text(data), reply_markup=build_main_menu())
 
-    elif data == "menu_generate_data":
-        keyboard = [
-            [InlineKeyboardButton("Generar datos completos", callback_data="gen_full")],
-            [
-                InlineKeyboardButton("Solo nombre", callback_data="gen_name"),
-                InlineKeyboardButton("Solo email", callback_data="gen_email"),
-                InlineKeyboardButton("Solo tarjeta", callback_data="gen_card"),
-            ],
-            [InlineKeyboardButton("⬅️ Volver", callback_data="menu_main")],
-        ]
-        await query.edit_message_text("🎲 Elige qué tipo de datos generar:", reply_markup=InlineKeyboardMarkup(keyboard))
+    elif query.data == "menu_change_country":
+        keyboard = [[InlineKeyboardButton(p, callback_data=f"country_{p.lower()}")] for p in locales.keys()]
+        await query.edit_message_text("🌍 Elige un país:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif data == "menu_show_history":
-        history = user_history.get(user_id)
+    elif query.data.startswith("country_"):
+        country = query.data.split("_")[1]
+        if country in locales:
+            user_locales[user_id] = locales[country]
+            await query.edit_message_text(f"✅ País cambiado a {country.capitalize()}.", reply_markup=build_main_menu())
+
+    elif query.data == "menu_show_history":
+        history = user_history.get(user_id, [])
         if not history:
-            await query.answer("No tienes datos generados aún.", show_alert=True)
+            await query.edit_message_text("📜 No tienes historial.", reply_markup=build_main_menu())
             return
-        lines = []
-        for i, entry in enumerate(history[-10:], start=1):
-            line = f"{i}. " + ", ".join(f"{k}: {v}" for k, v in entry.items())
-            lines.append(line)
-        await query.edit_message_text("📜 *Tu historial de datos recientes:*\n" + "\n".join(lines) + "\n\n✨ Creado por: @LooKsCrazy0", parse_mode="Markdown")
+        json_data = json.dumps(history, indent=2, ensure_ascii=False)
+        file = BytesIO(json_data.encode("utf-8"))
+        file.name = "historial.json"
+        await context.bot.send_document(chat_id=query.message.chat.id, document=InputFile(file))
+        await query.edit_message_text("📤 Historial enviado como archivo.", reply_markup=build_main_menu())
 
-    elif data == "menu_stats":
-        total = stats_data_generated
-        most_used = stats_countries_used.most_common(3)
-        msg = f"📊 *Estadísticas del bot:*\n\nTotal datos generados: {total}\n\nPaíses más usados:\n"
-        if most_used:
-            for country, count in most_used:
-                readable_country = next((k.title() for k,v in locales.items() if v == country), country)
-                msg += f"• {readable_country}: {count}\n"
-        else:
-            msg += "Ningún dato generado aún."
-        msg += "\n\n✨ Creado por: @LooKsCrazy0"
-        await query.edit_message_text(msg, parse_mode="Markdown")
+    elif query.data == "menu_stats":
+        stats = f"📊 Datos generados: {stats_data_generated}\n"
+        for k, v in stats_countries_used.items():
+            stats += f"🌍 {k}: {v}\n"
+        await query.edit_message_text(stats, reply_markup=build_main_menu())
 
-    elif data == "menu_help":
+    elif query.data == "menu_help":
         help_text = (
-            "🛠 *Comandos disponibles:*\n\n"
-            "/start - Iniciar el bot y mostrar menú\n"
-            "/paises - Mostrar lista de países disponibles\n"
-            "/pais <nombre> - Seleccionar país (ejemplo: /pais mexico)\n"
-            "/fake - Generar datos falsos según el país seleccionado\n"
-            "/nombre - Generar solo un nombre falso\n"
-            "/email - Generar solo un email falso\n"
-            "/tarjeta - Generar solo una tarjeta de crédito falsa\n"
-            "/historial - Ver tus últimos datos generados\n"
-            "/exportar_txt - Exportar tu historial en archivo TXT\n"
-            "/exportar_json - Exportar tu historial en archivo JSON\n"
-            "/help - Mostrar este mensaje de ayuda\n\n"
+            "❓ *Ayuda del Bot*\n\n"
+            "- Usa el botón 'Cambiar país' para seleccionar la región de los datos.\n"
+            "- 'Generar datos' te creará un conjunto de información falsa.\n"
+            "- Puedes revisar tu historial o ver estadísticas del bot.\n\n"
             "✨ Creado por: @LooKsCrazy0"
         )
-        await query.edit_message_text(help_text, parse_mode="Markdown")
+        await query.edit_message_text(help_text, reply_markup=build_main_menu(), parse_mode="Markdown")
 
-    elif data.startswith("set_country_"):
-        country_key = data.replace("set_country_", "")
-        if country_key in locales:
-            user_locales[user_id] = locales[country_key]
-            await query.edit_message_text(
-                f"✅ País seleccionado: {country_key.title()}\n\nUsa /fake o el menú para generar datos.\n\n✨ Creado por: @LooKsCrazy0",
-                reply_markup=build_main_menu(),
-            )
-        else:
-            await query.edit_message_text("❌ País no válido.", reply_markup=build_main_menu())
-
-    elif data == "gen_full":
-        if user_id not in user_locales:
-            await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
-            return
-        locale = user_locales[user_id]
-        data = get_fake_data(locale)
-        user_history.setdefault(user_id, []).append(data)
-        stats_data_generated += 1
-        stats_countries_used[locale] += 1
-        text = format_data_text(data)
-        await query.edit_message_text(text, reply_markup=build_main_menu())
-
-    elif data == "gen_name":
-        if user_id not in user_locales:
-            await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
-            return
-        locale = user_locales[user_id]
-        name = Faker(locale).name()
-        user_history.setdefault(user_id, []).append({"Nombre": name})
-        stats_data_generated += 1
-        stats_countries_used[locale] += 1
-        await query.edit_message_text(f"👤 Nombre falso:\n{name}\n\n✨ Creado por: @LooKsCrazy0", reply_markup=build_main_menu())
-
-    elif data == "gen_email":
-        if user_id not in user_locales:
-            await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
-            return
-        locale = user_locales[user_id]
-        email = Faker(locale).email()
-        user_history.setdefault(user_id, []).append({"Email": email})
-        stats_data_generated += 1
-        stats_countries_used[locale] += 1
-        await query.edit_message_text(f"📧 Email falso:\n{email}\n\n✨ Creado por: @LooKsCrazy0", reply_markup=build_main_menu())
-
-    elif data == "gen_card":
-        if user_id not in user_locales:
-            await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
-            return
-        locale = user_locales[user_id]
-        card = Faker(locale).credit_card_number(card_type='visa')
-        user_history.setdefault(user_id, []).append({"Tarjeta": card})
-        stats_data_generated += 1
-        stats_countries_used[locale] += 1
-        await query.edit_message_text(f"💳 Tarjeta de crédito falsa:\n{card}\n\n✨ Creado por: @LooKsCrazy0", reply_markup=build_main_menu())
-
-    elif data == "menu_main":
-        await query.edit_message_text("Menú principal:", reply_markup=build_main_menu())
-
+# Main
 def main():
     print_banner()
-    print("[INFO] Iniciando bot...")
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("paises", paises))
-    app.add_handler(CommandHandler("pais", set_country_locale))
-    app.add_handler(CommandHandler("fake", generate_fake))
-    app.add_handler(CommandHandler("nombre", generate_name))
-    app.add_handler(CommandHandler("email", generate_email))
-    app.add_handler(CommandHandler("tarjeta", generate_card))
-    app.add_handler(CommandHandler("historial", show_history))
-    app.add_handler(CommandHandler("exportar_txt", export_txt))
-    app.add_handler(CommandHandler("exportar_json", export_json))
-    app.add_handler(CommandHandler("estadisticas", show_stats))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("[INFO] Bot iniciado correctamente.")
+    print("[INFO] Bot iniciado.")
     app.run_polling()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
