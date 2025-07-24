@@ -1,13 +1,8 @@
-import os
-from dotenv import load_dotenv
-from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from faker import Faker
 
-load_dotenv()
-TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")
+TOKEN = "8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY"
 
-# 🎨 Banner
 BANNER = (
     "🧪 𝗕𝗢𝗧 𝗙𝗔𝗞𝗘 𝗗𝗔𝗧𝗔 𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗢𝗥\n"
     "🎨 By @LooKsCrazy0\n"
