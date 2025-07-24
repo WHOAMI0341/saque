@@ -1,2 +1,2 @@
-python-telegram-bot==20.3
-Faker==18.9.0
+python-telegram-bot==20.7
+faker==24.10.0
