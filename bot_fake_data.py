@@ -41,7 +41,7 @@ def print_banner():
     print(banner)
 
 # TOKEN desde variable de entorno
-TOKEN = os.getenv("8439097842:AAEGxjKleyqYDPqzrin3vGMoW9GKLTc2acY")
+TOKEN = os.getenv("TOKEN")
 
 locales = {
     "usa": "en_US",
@@ -258,6 +258,8 @@ async def show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global stats_data_generated, stats_countries_used  # <- Declaración global al inicio
+
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
@@ -341,7 +343,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ País no válido.", reply_markup=build_main_menu())
 
     elif data == "gen_full":
-        global stats_data_generated, stats_countries_used
         if user_id not in user_locales:
             await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
             return
@@ -354,7 +355,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text, reply_markup=build_main_menu())
 
     elif data == "gen_name":
-        global stats_data_generated, stats_countries_used
         if user_id not in user_locales:
             await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
             return
@@ -366,7 +366,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(f"👤 Nombre falso:\n{name}\n\n✨ Creado por: @LooKsCrazy0", reply_markup=build_main_menu())
 
     elif data == "gen_email":
-        global stats_data_generated, stats_countries_used
         if user_id not in user_locales:
             await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
             return
@@ -378,7 +377,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(f"📧 Email falso:\n{email}\n\n✨ Creado por: @LooKsCrazy0", reply_markup=build_main_menu())
 
     elif data == "gen_card":
-        global stats_data_generated, stats_countries_used
         if user_id not in user_locales:
             await query.answer("Por favor selecciona un país primero usando el menú o /pais", show_alert=True)
             return
